@@ -46,7 +46,7 @@ function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const token = core.getInput('token', { required: true });
-            const config = JSON.parse(fs_1.default.readFileSync('openapi-merge.json', 'utf-8'));
+            const config = JSON.parse(fs_1.default.readFileSync('openapi-merge-src.json', 'utf-8'));
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const urls = config.inputs.map(({ inputFile }) => inputFile);
             for (const [index, url] of urls.entries()) {
@@ -62,8 +62,10 @@ function run() {
                 fs_1.default.writeFileSync(`openapi-${index}.yaml`, data);
                 config.inputs[index].inputFile = `openapi-${index}.yaml`;
             }
-            fs_1.default.writeFileSync('openapi-merge.json', JSON.stringify(config));
+            fs_1.default.writeFileSync('openapi-merge.json', JSON.stringify(config, null, 2));
             child_process_1.execSync('npx openapi-merge-cli');
+            child_process_1.execSync('git clean -f');
+            child_process_1.execSync('git restore openapi-merge.json');
         }
         catch (error) {
             core.setFailed(error.message);

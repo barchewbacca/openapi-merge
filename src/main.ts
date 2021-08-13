@@ -27,9 +27,13 @@ async function run(): Promise<void> {
       config.inputs[index].inputFile = `openapi-${index}.yaml`;
     }
 
-    fs.writeFileSync('openapi-merge.json', JSON.stringify(config));
+    fs.writeFileSync('openapi-merge.json', JSON.stringify(config, null, 2));
 
     execSync('npx openapi-merge-cli');
+
+    execSync('git clean -f');
+
+    execSync('git restore openapi-merge.json');
   } catch (error) {
     core.setFailed(error.message);
   }
