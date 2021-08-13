@@ -1,19 +1,17 @@
-import * as core from '@actions/core'
-import {wait} from './wait'
+import * as core from '@actions/core';
 
 async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
-    core.debug(`Waiting ${ms} milliseconds ...`) // debug is only output if you set the secret `ACTIONS_RUNNER_DEBUG` to true
+    const token = core.getInput('token', { required: true });
+    const urls = core.getInput('urls', { required: true });
 
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
+    const urlList = JSON.parse(urls);
 
-    core.setOutput('time', new Date().toTimeString())
+    // eslint-disable-next-line no-console
+    console.log('Test', urlList, token);
   } catch (error) {
-    core.setFailed(error.message)
+    core.setFailed(error.message);
   }
 }
 
-run()
+run();
