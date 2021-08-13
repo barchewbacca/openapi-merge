@@ -6,7 +6,7 @@ import fs from 'fs';
 async function run(): Promise<void> {
   try {
     const token = core.getInput('token', { required: true });
-    const config = JSON.parse(fs.readFileSync('openapi-merge-src.json', 'utf-8'));
+    const config = JSON.parse(fs.readFileSync('openapi-merge.json', 'utf-8'));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const urls = config.inputs.map(({ inputFile }: any) => inputFile);
 
