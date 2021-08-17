@@ -8,7 +8,7 @@ async function run(): Promise<void> {
     const token = core.getInput('token', { required: true });
     const inputPath = core.getInput('inputPath', { required: true });
     // const outputPath = core.getInput('outputPath', { required: true });
-    // const token = '';
+    // const token = '123';
     // const inputPath = '/Users/sarea.al.kebaly/workspace/frodo/libs/shared/assets/src/assets/openapi';
     // const outputPath = '/Users/sarea.al.kebaly/workspace/frodo/libs/shared/assets/src/assets/openapi';
 
