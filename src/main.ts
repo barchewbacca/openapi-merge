@@ -7,9 +7,9 @@ import { Configuration } from './interfaces';
 async function run(): Promise<void> {
   try {
     const token = core.getInput('token', { required: true });
-    const inputPath = core.getInput('inputPath', { required: false }) ?? '.';
+    const path = core.getInput('path', { required: false });
 
-    const config: Configuration = JSON.parse(fs.readFileSync(`${inputPath}/openapi-merge.json`, 'utf-8'));
+    const config: Configuration = JSON.parse(fs.readFileSync(`${path}/openapi-merge.json`, 'utf-8'));
 
     const urls = config.inputs.map(({ inputFile }) => inputFile);
 
@@ -25,18 +25,18 @@ async function run(): Promise<void> {
         },
       });
 
-      fs.writeFileSync(`${inputPath}/openapi-${index}.yaml`, data);
+      fs.writeFileSync(`${path}/openapi-${index}.yaml`, data);
 
       config.inputs[index].inputFile = `openapi-${index}.yaml`;
     }
 
-    fs.writeFileSync(`${inputPath}/openapi-merge.json`, JSON.stringify(config, null, 2));
+    fs.writeFileSync(`${path}/openapi-merge.json`, JSON.stringify(config, null, 2));
 
-    execSync(`npx openapi-merge-cli --config ${inputPath}/openapi-merge.json`);
+    execSync(`npx openapi-merge-cli --config ${path}/openapi-merge.json`);
 
     execSync('git clean -f');
 
-    execSync(`git restore ${inputPath}/openapi-merge.json`);
+    execSync(`git restore ${path}/openapi-merge.json`);
   } catch (error) {
     core.setFailed(error);
   }
