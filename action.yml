@@ -10,10 +10,6 @@ inputs:
     required: true
     description: 'The location of the json file where the yaml files are listed in order to merge it'
     default: 'default value if applicable'
-  # outputPath:
-  #   required: false
-  #   description: 'The location of the output json file that includes the merged openapi files, if this value was not provided, the file will be created in the root folder of the repo'
-  #   default: 'default value if applicable'
 runs:
   using: 'node12'
   main: 'dist/index.js'
