@@ -43,11 +43,12 @@ const axios_1 = __importDefault(__nccwpck_require__(6545));
 const child_process_1 = __nccwpck_require__(3129);
 const fs_1 = __importDefault(__nccwpck_require__(5747));
 function run() {
+    var _a;
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const token = core.getInput('token', { required: true });
-            const inputPath = core.getInput('inputPath', { required: true });
-            const config = JSON.parse(fs_1.default.readFileSync(`${inputPath !== null && inputPath !== void 0 ? inputPath : '.'}/openapi-merge.json`, 'utf-8'));
+            const inputPath = (_a = core.getInput('inputPath', { required: false })) !== null && _a !== void 0 ? _a : '.';
+            const config = JSON.parse(fs_1.default.readFileSync(`${inputPath}/openapi-merge.json`, 'utf-8'));
             const urls = config.inputs.map(({ inputFile }) => inputFile);
             for (const [index, url] of urls.entries()) {
                 const cleanUrl = url.replace('https://github.com/', '').replace('blob/', '');
@@ -59,13 +60,13 @@ function run() {
                         Accept: '*/*',
                     },
                 });
-                fs_1.default.writeFileSync(`${inputPath !== null && inputPath !== void 0 ? inputPath : '.'}/openapi-${index}.yaml`, data);
+                fs_1.default.writeFileSync(`${inputPath}/openapi-${index}.yaml`, data);
                 config.inputs[index].inputFile = `openapi-${index}.yaml`;
             }
-            fs_1.default.writeFileSync(`${inputPath !== null && inputPath !== void 0 ? inputPath : '.'}/openapi-merge.json`, JSON.stringify(config, null, 2));
-            child_process_1.execSync(`npx openapi-merge-cli --config ${inputPath !== null && inputPath !== void 0 ? inputPath : '.'}/openapi-merge.json`);
+            fs_1.default.writeFileSync(`${inputPath}/openapi-merge.json`, JSON.stringify(config, null, 2));
+            child_process_1.execSync(`npx openapi-merge-cli --config ${inputPath}/openapi-merge.json`);
             child_process_1.execSync('git clean -f');
-            child_process_1.execSync(`git restore ${inputPath !== null && inputPath !== void 0 ? inputPath : '.'}/openapi-merge.json`);
+            child_process_1.execSync(`git restore ${inputPath}/openapi-merge.json`);
         }
         catch (error) {
             core.setFailed(error);
