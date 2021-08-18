@@ -2,10 +2,13 @@ name: 'Your name here'
 description: 'Provide a description here'
 author: 'Your name or organization here'
 inputs:
-  token: # change this
+  token:
     required: true
-    description: 'input description here'
-    default: 'default value if applicable'
+    description: 'Token to get access to the private repo(s)'
+  path:
+    required: false
+    description: 'The location of the json file where the yaml files are listed in order to merge it, if path was not provided, the value will point to the root folder of the repo'
+    default: '.'
 runs:
   using: 'node12'
   main: 'dist/index.js'
