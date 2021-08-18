@@ -7,12 +7,14 @@ async function run(): Promise<void> {
   try {
     const token = core.getInput('token', { required: true });
     const inputPath = core.getInput('inputPath', { required: true });
+    console.log('🚀 ~ file: main.ts ~ line 10 ~ run ~ inputPath', inputPath);
     // const outputPath = core.getInput('outputPath', { required: true });
     // const token = '123';
     // const inputPath = '/Users/sarea.al.kebaly/workspace/frodo/libs/shared/assets/src/assets/openapi';
     // const outputPath = '/Users/sarea.al.kebaly/workspace/frodo/libs/shared/assets/src/assets/openapi';
 
     const config = JSON.parse(fs.readFileSync(`${inputPath ?? '.'}/openapi-merge.json`, 'utf-8'));
+    console.log('🚀 ~ file: main.ts ~ line 17 ~ run ~ config', config);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const urls = config.inputs.map(({ inputFile }: any) => inputFile);
@@ -42,6 +44,7 @@ async function run(): Promise<void> {
 
     execSync(`git restore ${inputPath ?? '.'}/openapi-merge.json`);
   } catch (error) {
+    console.log('🚀 ~ file: main.ts ~ line 45 ~ run ~ error', error);
     core.setFailed(error.message);
   }
 }
