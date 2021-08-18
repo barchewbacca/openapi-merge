@@ -9,7 +9,11 @@ async function run(): Promise<void> {
     const token = core.getInput('token', { required: true });
     const path = core.getInput('path', { required: false });
 
+    console.log('path', path);
+
     const config: Configuration = JSON.parse(fs.readFileSync(`${path}/openapi-merge.json`, 'utf-8'));
+
+    console.log('config', config);
 
     const urls = config.inputs.map(({ inputFile }) => inputFile);
 
