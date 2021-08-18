@@ -7,8 +7,8 @@ inputs:
     description: 'Token to get access to the private repo(s)'
     default: 'default value if applicable'
   inputPath:
-    required: true
-    description: 'The location of the json file where the yaml files are listed in order to merge it'
+    required: false
+    description: 'The location of the json file where the yaml files are listed in order to merge it, if path was not provided, the value will point to the root folder of the repo'
     default: 'default value if applicable'
 runs:
   using: 'node12'
