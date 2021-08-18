@@ -47,9 +47,7 @@ function run() {
         try {
             const token = core.getInput('token', { required: true });
             const path = core.getInput('path', { required: false });
-            console.log('path', path);
             const config = JSON.parse(fs_1.default.readFileSync(`${path}/openapi-merge.json`, 'utf-8'));
-            console.log('config', config);
             const urls = config.inputs.map(({ inputFile }) => inputFile);
             for (const [index, url] of urls.entries()) {
                 const cleanUrl = url.replace('https://github.com/', '').replace('blob/', '');
