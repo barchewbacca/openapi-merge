@@ -4,7 +4,7 @@
 
 ## Description
 
-A github action that merge multiple openapi links from different repositories into one json file using [openapi-merge-cli](https://www.npmjs.com/package/openapi-merge-cli)
+A github action that merge multiple openapi links from different repositories into an array of object as JSON
 
 ## Usage
 
@@ -25,6 +25,6 @@ A github action that merge multiple openapi links from different repositories in
 | `token` | `GITHUB_TOKEN` (`repo` and `workflow` should be scoped) [Personal Access Token (PAT)](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token). |  |
 | `path` | Path to the `openapi-merge.json` file that contain list of the openapi links of different repositories. | root `.` |
 
-**Note**: The token must have access to all the listed repositories in the input array of the `openapi-merge.json` if they are private with a minimum read permission.
+**Note**: The token must have access to the all listed repositories in the input array of the `openapi-merge.json` if they are private with a minimum read permission.
 
-**Note**: The sso need to be enabled if the an org or account require that.
+**Note**: The sso is need to be enabled if an organization or as account require that.
