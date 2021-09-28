@@ -29,7 +29,7 @@ async function run(): Promise<void> {
       })
     );
     const jsonData = JSON.stringify(yamlData, null, 2);
-    fs.writeFileSync(config.output, jsonData);
+    fs.writeFileSync(path + config.output, jsonData);
   } catch (error) {
     console.log('error', error);
     core.setFailed(error);

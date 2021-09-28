@@ -62,7 +62,7 @@ function run() {
                 return yaml.load(data);
             })));
             const jsonData = JSON.stringify(yamlData, null, 2);
-            fs_1.default.writeFileSync(config.output, jsonData);
+            fs_1.default.writeFileSync(path + config.output, jsonData);
         }
         catch (error) {
             console.log('error', error);
