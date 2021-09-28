@@ -61,7 +61,7 @@ function run() {
                 });
                 return yaml.load(data);
             })));
-            const jsonData = JSON.stringify(yamlData);
+            const jsonData = JSON.stringify(yamlData, null, 2);
             fs_1.default.writeFileSync(path + config.output, jsonData);
         }
         catch (error) {

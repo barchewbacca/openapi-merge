@@ -28,7 +28,7 @@ async function run(): Promise<void> {
         return yaml.load(data);
       })
     );
-    const jsonData = JSON.stringify(yamlData);
+    const jsonData = JSON.stringify(yamlData, null, 2);
     fs.writeFileSync(path + config.output, jsonData);
   } catch (error) {
     console.log('error', error);
