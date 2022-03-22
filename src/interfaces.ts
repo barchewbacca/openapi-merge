@@ -1,13 +1,14 @@
 /**
  * A single Configuration input File.
  */
-export interface InputFile {
+export interface App {
   /**
    * The path to the input OpenAPI Schema that will be merged into an array.
    *
    * @minLength 1
    */
-  inputFile: string;
+  url: string;
+  appId?: string;
 }
 
 /**
@@ -19,7 +20,7 @@ export type Configuration = {
    *
    * @minItems 1
    */
-  inputs: InputFile[];
+  appList: App[];
 
   /**
    * The output file to put the results in as JSON format.
@@ -28,3 +29,8 @@ export type Configuration = {
    */
   output: string;
 };
+
+export interface OutputApi {
+  openApi: unknown;
+  appId?: string;
+}
