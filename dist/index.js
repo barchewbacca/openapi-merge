@@ -60,7 +60,7 @@ function run() {
                 });
                 // convert YAML to plain object
                 // add appId if it's there
-                return Object.assign({ api: yaml.load(data) }, (appId && { appId }));
+                return Object.assign({ openApi: yaml.load(data) }, (appId && { appId }));
             })));
             const jsonData = JSON.stringify(outputAppList, null, 2);
             fs_1.default.writeFileSync(path + config.output, jsonData);

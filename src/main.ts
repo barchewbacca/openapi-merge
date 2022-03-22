@@ -27,7 +27,7 @@ async function run(): Promise<void> {
         // convert YAML to plain object
         // add appId if it's there
         return {
-          api: yaml.load(data),
+          openApi: yaml.load(data),
           ...(appId && { appId }),
         };
       })
