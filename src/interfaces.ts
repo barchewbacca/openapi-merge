@@ -30,7 +30,7 @@ export type Configuration = {
   output: string;
 };
 
-export interface OutputApp {
+export interface OutputApi {
   openApi: unknown;
   appId?: string;
 }

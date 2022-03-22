@@ -48,7 +48,7 @@ function run() {
             const token = core.getInput('token', { required: true });
             const path = core.getInput('path', { required: false });
             const config = JSON.parse(fs_1.default.readFileSync(`${path}/openapi-merge.json`, 'utf-8'));
-            const outputAppList = yield Promise.all(config.appList.map(({ url, appId }) => __awaiter(this, void 0, void 0, function* () {
+            const outputApiList = yield Promise.all(config.appList.map(({ url, appId }) => __awaiter(this, void 0, void 0, function* () {
                 const cleanUrl = url.replace('https://github.com/', '').replace('blob/', '');
                 const rawUrl = `https://raw.githubusercontent.com/${cleanUrl}`;
                 const { data } = yield axios_1.default.get(rawUrl, {
@@ -62,7 +62,7 @@ function run() {
                 // add appId if it's there
                 return Object.assign({ openApi: yaml.load(data) }, (appId && { appId }));
             })));
-            const jsonData = JSON.stringify(outputAppList, null, 2);
+            const jsonData = JSON.stringify(outputApiList, null, 2);
             fs_1.default.writeFileSync(path + config.output, jsonData);
         }
         catch (error) {
