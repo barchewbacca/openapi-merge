@@ -2,7 +2,7 @@ import * as core from '@actions/core';
 import axios from 'axios';
 import fs from 'fs';
 import * as yaml from 'js-yaml';
-import { Configuration } from './interfaces';
+import { Configuration, OutputApp } from './interfaces';
 
 async function run(): Promise<void> {
   try {
@@ -11,10 +11,9 @@ async function run(): Promise<void> {
 
     const config: Configuration = JSON.parse(fs.readFileSync(`${path}/openapi-merge.json`, 'utf-8'));
 
-    // array of yaml
-    const yamlData = await Promise.all(
-      config.inputs.map(async ({ inputFile }) => {
-        const cleanUrl = inputFile.replace('https://github.com/', '').replace('blob/', '');
+    const outputAppList: OutputApp[] = await Promise.all(
+      config.appList.map(async ({ url, appId }) => {
+        const cleanUrl = url.replace('https://github.com/', '').replace('blob/', '');
         const rawUrl = `https://raw.githubusercontent.com/${cleanUrl}`;
 
         const { data } = await axios.get(rawUrl, {
@@ -25,10 +24,15 @@ async function run(): Promise<void> {
           },
         });
 
-        return yaml.load(data);
+        // convert YAML to plain object
+        // add appId if it's there
+        return {
+          api: yaml.load(data),
+          ...(appId && { appId }),
+        };
       })
     );
-    const jsonData = JSON.stringify(yamlData, null, 2);
+    const jsonData = JSON.stringify(outputAppList, null, 2);
     fs.writeFileSync(path + config.output, jsonData);
   } catch (error) {
     console.log('error', error);
