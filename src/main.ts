@@ -7,9 +7,10 @@ import { Configuration, OutputApi } from './interfaces';
 async function run(): Promise<void> {
   try {
     const token = core.getInput('token', { required: true });
+    const filename = core.getInput('filename', { required: true });
     const path = core.getInput('path', { required: false });
 
-    const config: Configuration = JSON.parse(fs.readFileSync(`${path}/openapi-merge.json`, 'utf-8'));
+    const config: Configuration = JSON.parse(fs.readFileSync(`${path}/${filename}`, 'utf-8'));
 
     const outputApiList: OutputApi[] = await Promise.all(
       config.appList.map(async ({ url, appId }) => {
@@ -27,7 +28,7 @@ async function run(): Promise<void> {
         // convert YAML to plain object
         // add appId if it's there
         return {
-          openApi: yaml.load(data),
+          api: yaml.load(data),
           ...(appId && { appId }),
         };
       })

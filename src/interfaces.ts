@@ -31,6 +31,6 @@ export type Configuration = {
 };
 
 export interface OutputApi {
-  openApi: unknown;
+  api: unknown;
   appId?: string;
 }
