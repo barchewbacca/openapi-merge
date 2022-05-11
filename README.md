@@ -16,6 +16,7 @@ A github action that merge multiple openapi links from different repositories in
         with:
           token: ${{ TOKEN }}
           path: 'path/to/openapi/merge/file'
+          filename: 'openapi-merge.json'
 ```
 
 ### Action inputs
@@ -24,6 +25,7 @@ A github action that merge multiple openapi links from different repositories in
 | --- | --- | --- |
 | `token` | `GITHUB_TOKEN` (`repo` and `workflow` should be scoped) [Personal Access Token (PAT)](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token). |  |
 | `path` | Path to the `openapi-merge.json` file that contain list of the openapi links of different repositories. | root `.` |
+| `filename` | Name of the json file that contains the links to the API specifications
 
 **Note**: The token must have access to the all listed repositories in the input array of the `openapi-merge.json` if they are private with a minimum read permission.
 
