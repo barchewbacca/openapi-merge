@@ -2,7 +2,7 @@ import * as core from '@actions/core';
 import axios from 'axios';
 import fs from 'fs';
 import * as yaml from 'js-yaml';
-import { Configuration, OutputApi } from './interfaces';
+import { AppList } from './interfaces';
 
 async function run(): Promise<void> {
   try {
@@ -10,31 +10,79 @@ async function run(): Promise<void> {
     const filename = core.getInput('filename', { required: true });
     const path = core.getInput('path', { required: false });
 
-    const config: Configuration = JSON.parse(fs.readFileSync(`${path}/${filename}`, 'utf-8'));
+    const appList: AppList = JSON.parse(fs.readFileSync(`${path}/${filename}`, 'utf-8'));
 
-    const outputApiList: OutputApi[] = await Promise.all(
-      config.appList.map(async ({ url, appId }) => {
-        const cleanUrl = url.replace('https://github.com/', '').replace('blob/', '');
-        const rawUrl = `https://raw.githubusercontent.com/${cleanUrl}`;
+    for (const [appId, appItem] of Object.entries(appList)) {
+      const { openApi, asyncApi } = appItem;
 
-        const { data } = await axios.get(rawUrl, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            Accept: '*/*',
-          },
-        });
+      if (openApi) {
+        const openApiOutput = await Promise.all(
+          openApi.map(async url => {
+            const cleanUrl = url.replace('https://github.com/', '').replace('blob/', '');
+            const rawUrl = `https://raw.githubusercontent.com/${cleanUrl}`;
 
-        // convert YAML to plain object
-        // add appId if it's there
-        return {
-          api: yaml.load(data),
-          ...(appId && { appId }),
-        };
-      })
-    );
-    const jsonData = JSON.stringify(outputApiList, null, 2);
-    fs.writeFileSync(path + config.output, jsonData);
+            const { data } = await axios.get(rawUrl, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                Accept: '*/*',
+              },
+            });
+            return {
+              output: yaml.load(data),
+              appId,
+            };
+          })
+        );
+        const jsonData = JSON.stringify(openApiOutput, null, 2);
+        fs.writeFileSync(`${path}/${appId}/openapi.json`, jsonData);
+      }
+
+      if (asyncApi) {
+        const asyncApiOutput = await Promise.all(
+          asyncApi.map(async url => {
+            const cleanUrl = url.replace('https://github.com/', '').replace('blob/', '');
+            const rawUrl = `https://raw.githubusercontent.com/${cleanUrl}`;
+
+            const { data } = await axios.get(rawUrl, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                Accept: '*/*',
+              },
+            });
+            return {
+              output: yaml.load(data),
+              appId,
+            };
+          })
+        );
+        const jsonData = JSON.stringify(asyncApiOutput, null, 2);
+        fs.writeFileSync(`${path}/${appId}/asyncApi.json`, jsonData);
+      }
+      // if (guides) {
+      //   await Promise.all(
+      //     guides.map(async ({ topic, url }) => {
+      //       const cleanUrl = url.replace('https://github.com/', '').replace('blob/', '');
+      //       const rawUrl = `https://raw.githubusercontent.com/${cleanUrl}`;
+
+      //       const { data } = await axios.get(rawUrl, {
+      //         headers: {
+      //           Authorization: `Bearer ${token}`,
+      //           'Content-Type': 'application/json',
+      //           Accept: '*/*',
+      //         },
+      //       });
+      //       // return {
+      //       //   output: yaml.load(data),
+      //       //   appId,
+      //       // };
+      //       const jsonData = JSON.stringify(guidesOutput, null, 2);
+      //       fs.writeFileSync(`${path}/${appId}/guides/${topic}.json`, jsonData);
+      //     })
+      //   );
+      // }
+    }
   } catch (error) {
     console.log('error', error);
     core.setFailed(error);
