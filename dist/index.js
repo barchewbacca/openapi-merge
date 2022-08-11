@@ -52,64 +52,22 @@ function run() {
             for (const [appId, appItem] of Object.entries(appList)) {
                 const { openApi, asyncApi, guides } = appItem;
                 if (openApi) {
-                    const openApiOutput = yield Promise.all(openApi.map((url) => __awaiter(this, void 0, void 0, function* () {
-                        const cleanUrl = url.replace('https://github.com/', '').replace('blob/', '');
-                        const rawUrl = `https://raw.githubusercontent.com/${cleanUrl}`;
-                        const { data } = yield axios_1.default.get(rawUrl, {
-                            headers: {
-                                Authorization: `Bearer ${token}`,
-                                'Content-Type': 'application/json',
-                                Accept: '*/*',
-                            },
-                        });
-                        return {
-                            output: yaml.load(data),
-                            appId,
-                        };
-                    })));
-                    const jsonData = JSON.stringify(openApiOutput, null, 2);
-                    if (fs_1.default.existsSync(`${path}/${appId}`) === false) {
-                        fs_1.default.mkdirSync(`${path}/${appId}`);
-                    }
-                    fs_1.default.writeFileSync(`${path}/${appId}/openApi.json`, jsonData);
+                    const openApiOutput = yield fetchApiList(openApi, token, appId);
+                    updateOutputSpecFiles(openApiOutput, path, appId, 'openApi');
                 }
                 if (asyncApi) {
-                    const asyncApiOutput = yield Promise.all(asyncApi.map((url) => __awaiter(this, void 0, void 0, function* () {
-                        const cleanUrl = url.replace('https://github.com/', '').replace('blob/', '');
-                        const rawUrl = `https://raw.githubusercontent.com/${cleanUrl}`;
-                        const { data } = yield axios_1.default.get(rawUrl, {
-                            headers: {
-                                Authorization: `Bearer ${token}`,
-                                'Content-Type': 'application/json',
-                                Accept: '*/*',
-                            },
-                        });
-                        return {
-                            output: yaml.load(data),
-                            appId,
-                        };
-                    })));
-                    const jsonData = JSON.stringify(asyncApiOutput, null, 2);
-                    if (fs_1.default.existsSync(`${path}/${appId}`) === false) {
-                        fs_1.default.mkdirSync(`${path}/${appId}`);
-                    }
-                    fs_1.default.writeFileSync(`${path}/${appId}/asyncApi.json`, jsonData);
+                    const asyncApiOutput = yield fetchApiList(asyncApi, token, appId);
+                    updateOutputSpecFiles(asyncApiOutput, path, appId, 'asyncApi');
                 }
                 if (guides) {
                     yield Promise.all(guides.map(({ topic, url }) => __awaiter(this, void 0, void 0, function* () {
-                        const cleanUrl = url.replace('https://github.com/', '').replace('blob/', '');
-                        const rawUrl = `https://raw.githubusercontent.com/${cleanUrl}`;
-                        const { data } = yield axios_1.default.get(rawUrl, {
-                            headers: {
-                                Authorization: `Bearer ${token}`,
-                                'Content-Type': 'text/markdown',
-                                Accept: '*/*',
-                            },
-                        });
-                        if (fs_1.default.existsSync(`${path}/${appId}/guides`) === false) {
-                            fs_1.default.mkdirSync(`${path}/${appId}/guides`);
+                        const githubUrl = getGithubUrl(url);
+                        const data = yield getData(githubUrl, token, 'text/markdown');
+                        const relativePath = `${path}/${appId}/guides`;
+                        if (fs_1.default.existsSync(relativePath) === false) {
+                            fs_1.default.mkdirSync(relativePath);
                         }
-                        fs_1.default.writeFileSync(`${path}/${appId}/guides/${topic}.md`, data);
+                        fs_1.default.writeFileSync(`${relativePath}/${topic}.md`, data);
                     })));
                 }
             }
@@ -119,6 +77,43 @@ function run() {
             core.setFailed(error);
         }
     });
+}
+function fetchApiList(urlList, token, appId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const apiOutput = Promise.all(urlList.map((url) => __awaiter(this, void 0, void 0, function* () {
+            const githubUrl = getGithubUrl(url);
+            const data = yield getData(githubUrl, token, 'application/json');
+            return {
+                output: yaml.load(data),
+                appId,
+            };
+        })));
+        return apiOutput;
+    });
+}
+function getData(url, token, contentType) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const { data } = yield axios_1.default.get(url, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': contentType,
+                Accept: '*/*',
+            },
+        });
+        return data;
+    });
+}
+function updateOutputSpecFiles(openApiOutput, path, appId, filename) {
+    const jsonData = JSON.stringify(openApiOutput, null, 2);
+    const relativePath = `${path}/${appId}`;
+    if (fs_1.default.existsSync(relativePath) === false) {
+        fs_1.default.mkdirSync(relativePath);
+    }
+    fs_1.default.writeFileSync(`${relativePath}/${filename}.json`, jsonData);
+}
+function getGithubUrl(url) {
+    const cleanUrl = url.replace('https://github.com/', '').replace('blob/', '');
+    return `https://raw.githubusercontent.com/${cleanUrl}`;
 }
 run();
 

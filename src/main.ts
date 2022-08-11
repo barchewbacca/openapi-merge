@@ -2,7 +2,7 @@ import * as core from '@actions/core';
 import axios from 'axios';
 import fs from 'fs';
 import * as yaml from 'js-yaml';
-import { AppList } from './interfaces';
+import { ApiOutput, AppList } from './interfaces';
 
 async function run(): Promise<void> {
   try {
@@ -16,74 +16,25 @@ async function run(): Promise<void> {
       const { openApi, asyncApi, guides } = appItem;
 
       if (openApi) {
-        const openApiOutput = await Promise.all(
-          openApi.map(async url => {
-            const cleanUrl = url.replace('https://github.com/', '').replace('blob/', '');
-            const rawUrl = `https://raw.githubusercontent.com/${cleanUrl}`;
-
-            const { data } = await axios.get(rawUrl, {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                Accept: '*/*',
-              },
-            });
-            return {
-              output: yaml.load(data),
-              appId,
-            };
-          })
-        );
-        const jsonData = JSON.stringify(openApiOutput, null, 2);
-        if (fs.existsSync(`${path}/${appId}`) === false) {
-          fs.mkdirSync(`${path}/${appId}`);
-        }
-        fs.writeFileSync(`${path}/${appId}/openApi.json`, jsonData);
+        const openApiOutput = await fetchApiList(openApi, token, appId);
+        updateOutputSpecFiles(openApiOutput, path, appId, 'openApi');
       }
 
       if (asyncApi) {
-        const asyncApiOutput = await Promise.all(
-          asyncApi.map(async url => {
-            const cleanUrl = url.replace('https://github.com/', '').replace('blob/', '');
-            const rawUrl = `https://raw.githubusercontent.com/${cleanUrl}`;
-
-            const { data } = await axios.get(rawUrl, {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                Accept: '*/*',
-              },
-            });
-            return {
-              output: yaml.load(data),
-              appId,
-            };
-          })
-        );
-        const jsonData = JSON.stringify(asyncApiOutput, null, 2);
-        if (fs.existsSync(`${path}/${appId}`) === false) {
-          fs.mkdirSync(`${path}/${appId}`);
-        }
-        fs.writeFileSync(`${path}/${appId}/asyncApi.json`, jsonData);
+        const asyncApiOutput = await fetchApiList(asyncApi, token, appId);
+        updateOutputSpecFiles(asyncApiOutput, path, appId, 'asyncApi');
       }
+
       if (guides) {
         await Promise.all(
           guides.map(async ({ topic, url }) => {
-            const cleanUrl = url.replace('https://github.com/', '').replace('blob/', '');
-            const rawUrl = `https://raw.githubusercontent.com/${cleanUrl}`;
-
-            const { data } = await axios.get(rawUrl, {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'text/markdown',
-                Accept: '*/*',
-              },
-            });
-
-            if (fs.existsSync(`${path}/${appId}/guides`) === false) {
-              fs.mkdirSync(`${path}/${appId}/guides`);
+            const githubUrl = getGithubUrl(url);
+            const data = await getData(githubUrl, token, 'text/markdown');
+            const relativePath = `${path}/${appId}/guides`;
+            if (fs.existsSync(relativePath) === false) {
+              fs.mkdirSync(relativePath);
             }
-            fs.writeFileSync(`${path}/${appId}/guides/${topic}.md`, data);
+            fs.writeFileSync(`${relativePath}/${topic}.md`, data);
           })
         );
       }
@@ -92,6 +43,45 @@ async function run(): Promise<void> {
     console.log('error', error);
     core.setFailed(error);
   }
+}
+
+async function fetchApiList(urlList: string[], token: string, appId: string): Promise<ApiOutput[]> {
+  const apiOutput = Promise.all(
+    urlList.map(async url => {
+      const githubUrl = getGithubUrl(url);
+      const data = await getData(githubUrl, token, 'application/json');
+      return {
+        output: yaml.load(data),
+        appId,
+      };
+    })
+  );
+  return apiOutput;
+}
+
+async function getData(url: string, token: string, contentType: string): Promise<string> {
+  const { data } = await axios.get(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': contentType,
+      Accept: '*/*',
+    },
+  });
+  return data;
+}
+
+function updateOutputSpecFiles(openApiOutput: ApiOutput[], path: string, appId: string, filename: string): void {
+  const jsonData = JSON.stringify(openApiOutput, null, 2);
+  const relativePath = `${path}/${appId}`;
+  if (fs.existsSync(relativePath) === false) {
+    fs.mkdirSync(relativePath);
+  }
+  fs.writeFileSync(`${relativePath}/${filename}.json`, jsonData);
+}
+
+function getGithubUrl(url: string): string {
+  const cleanUrl = url.replace('https://github.com/', '').replace('blob/', '');
+  return `https://raw.githubusercontent.com/${cleanUrl}`;
 }
 
 run();

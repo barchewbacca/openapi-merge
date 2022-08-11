@@ -1,6 +1,3 @@
-/**
- * The merge file.
- */
 export type AppList = {
   [appId: string]: App;
 };
@@ -14,4 +11,9 @@ export interface App {
 export interface Guide {
   topic: string;
   url: string;
+}
+
+export interface ApiOutput {
+  output: unknown;
+  appId: string;
 }

@@ -12,7 +12,7 @@ inputs:
   filename:
     required: true
     description: 'Name of the json file that contains the links to api specifications'
-    default: 'openapi-merge.json'
+    default: 'app-list.json'
 runs:
   using: 'node12'
   main: 'dist/index.js'
