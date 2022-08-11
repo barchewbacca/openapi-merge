@@ -50,7 +50,7 @@ function run() {
             const path = core.getInput('path', { required: false });
             const appList = JSON.parse(fs_1.default.readFileSync(`${path}/${filename}`, 'utf-8'));
             for (const [appId, appItem] of Object.entries(appList)) {
-                const { openApi, asyncApi } = appItem;
+                const { openApi, asyncApi, guides } = appItem;
                 if (openApi) {
                     const openApiOutput = yield Promise.all(openApi.map((url) => __awaiter(this, void 0, void 0, function* () {
                         const cleanUrl = url.replace('https://github.com/', '').replace('blob/', '');
@@ -68,7 +68,10 @@ function run() {
                         };
                     })));
                     const jsonData = JSON.stringify(openApiOutput, null, 2);
-                    fs_1.default.writeFileSync(`${path}/${appId}/openapi.json`, jsonData);
+                    if (fs_1.default.existsSync(`${path}/${appId}`) === false) {
+                        fs_1.default.mkdirSync(`${path}/${appId}`);
+                    }
+                    fs_1.default.writeFileSync(`${path}/${appId}/openApi.json`, jsonData);
                 }
                 if (asyncApi) {
                     const asyncApiOutput = yield Promise.all(asyncApi.map((url) => __awaiter(this, void 0, void 0, function* () {
@@ -87,29 +90,28 @@ function run() {
                         };
                     })));
                     const jsonData = JSON.stringify(asyncApiOutput, null, 2);
+                    if (fs_1.default.existsSync(`${path}/${appId}`) === false) {
+                        fs_1.default.mkdirSync(`${path}/${appId}`);
+                    }
                     fs_1.default.writeFileSync(`${path}/${appId}/asyncApi.json`, jsonData);
                 }
-                // if (guides) {
-                //   await Promise.all(
-                //     guides.map(async ({ topic, url }) => {
-                //       const cleanUrl = url.replace('https://github.com/', '').replace('blob/', '');
-                //       const rawUrl = `https://raw.githubusercontent.com/${cleanUrl}`;
-                //       const { data } = await axios.get(rawUrl, {
-                //         headers: {
-                //           Authorization: `Bearer ${token}`,
-                //           'Content-Type': 'application/json',
-                //           Accept: '*/*',
-                //         },
-                //       });
-                //       // return {
-                //       //   output: yaml.load(data),
-                //       //   appId,
-                //       // };
-                //       const jsonData = JSON.stringify(guidesOutput, null, 2);
-                //       fs.writeFileSync(`${path}/${appId}/guides/${topic}.json`, jsonData);
-                //     })
-                //   );
-                // }
+                if (guides) {
+                    yield Promise.all(guides.map(({ topic, url }) => __awaiter(this, void 0, void 0, function* () {
+                        const cleanUrl = url.replace('https://github.com/', '').replace('blob/', '');
+                        const rawUrl = `https://raw.githubusercontent.com/${cleanUrl}`;
+                        const { data } = yield axios_1.default.get(rawUrl, {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                                'Content-Type': 'text/markdown',
+                                Accept: '*/*',
+                            },
+                        });
+                        if (fs_1.default.existsSync(`${path}/${appId}/guides`) === false) {
+                            fs_1.default.mkdirSync(`${path}/${appId}/guides`);
+                        }
+                        fs_1.default.writeFileSync(`${path}/${appId}/guides/${topic}.md`, data);
+                    })));
+                }
             }
         }
         catch (error) {
