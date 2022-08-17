@@ -32,7 +32,7 @@ async function run(): Promise<void> {
             const data = await getData(githubUrl, token, 'text/markdown');
             const relativePath = `${path}/${appId}/guides`;
             if (fs.existsSync(relativePath) === false) {
-              fs.mkdirSync(relativePath);
+              fs.mkdirSync(relativePath, { recursive: true });
             }
             fs.writeFileSync(`${relativePath}/${topic}.md`, data);
           })
@@ -41,7 +41,7 @@ async function run(): Promise<void> {
     }
   } catch (error) {
     console.log('error', error);
-    core.setFailed(error);
+    core.setFailed(error as string);
   }
 }
 
@@ -74,7 +74,7 @@ function updateOutputSpecFiles(openApiOutput: ApiOutput[], path: string, appId: 
   const jsonData = JSON.stringify(openApiOutput, null, 2);
   const relativePath = `${path}/${appId}`;
   if (fs.existsSync(relativePath) === false) {
-    fs.mkdirSync(relativePath);
+    fs.mkdirSync(relativePath, { recursive: true });
   }
   fs.writeFileSync(`${relativePath}/${filename}.json`, jsonData);
 }
