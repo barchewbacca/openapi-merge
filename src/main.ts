@@ -62,7 +62,7 @@ async function fetchApiSpecsAndSaveSourceFile(
       }
 
       // saving the source file as a side effect
-      const srcPath = `${path}/${appId}`;
+      const srcPath = `${path}/${appId}/src`;
       const srcFilename = `${filename}-${(index + 1).toString().padStart(2, '0')}.yaml`;
       console.log('fetchApiSpecsAndSaveSourceFile', appId);
       saveFile(data, srcPath, srcFilename);
