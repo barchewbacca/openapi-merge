@@ -11,6 +11,7 @@ async function run(): Promise<void> {
     const path = core.getInput('path', { required: false });
 
     const developerConfig: DeveloperConfig = JSON.parse(fs.readFileSync(`${path}/${filename}`, 'utf-8'));
+    core.info(developerConfig.toString());
 
     for (const [appId, configItem] of Object.entries(developerConfig)) {
       const { openapiUrls, asyncapiUrls, guides } = configItem;
