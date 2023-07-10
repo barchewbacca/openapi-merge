@@ -1,19 +1,25 @@
-export type AppList = {
-  [appId: string]: App;
+export type DeveloperConfig = {
+  [appId: string]: DeveloperConfigItem;
 };
 
-export interface App {
-  openApi?: string[];
-  asyncApi?: string[];
-  guides?: Guide[];
+export interface DeveloperConfigItem {
+  openapiUrls?: string[];
+  asyncapiUrls?: string[];
+  guides?: GuideConfig[];
 }
 
-export interface Guide {
-  topic: string;
+export interface GuideConfig {
+  name: string;
   url: string;
 }
 
-export interface ApiOutput {
-  output: unknown;
+export interface FetchApiResponse {
+  data: unknown;
   appId: string;
+}
+
+export interface FetchGuideResponse {
+  data: string;
+  appId: string;
+  name: string;
 }
