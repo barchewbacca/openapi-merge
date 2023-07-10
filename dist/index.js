@@ -43,36 +43,29 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
-const axios_1 = __importDefault(__nccwpck_require__(6545));
 const fs_1 = __importDefault(__nccwpck_require__(5747));
 const yaml = __importStar(__nccwpck_require__(1917));
+const utils_1 = __nccwpck_require__(918);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const token = core.getInput('token', { required: true });
             const filename = core.getInput('filename', { required: true });
             const path = core.getInput('path', { required: false });
-            const appList = JSON.parse(fs_1.default.readFileSync(`${path}/${filename}`, 'utf-8'));
-            for (const [appId, appItem] of Object.entries(appList)) {
-                const { openApi, asyncApi, guides } = appItem;
-                if (openApi) {
-                    const openApiOutput = yield fetchApiList(openApi, token, appId);
-                    updateOutputSpecFiles(openApiOutput, path, appId, 'openApi');
+            const developerConfig = JSON.parse(fs_1.default.readFileSync(`${path}/${filename}`, 'utf-8'));
+            for (const [appId, configItem] of Object.entries(developerConfig)) {
+                const { openapiUrls, asyncapiUrls, guides } = configItem;
+                if (openapiUrls && openapiUrls.length) {
+                    const fetchResponse = yield fetchApiSpecsAndSaveSourceFile(openapiUrls, token, appId, path, 'openapi');
+                    saveApiSpecs(fetchResponse, path, 'openapi.json');
                 }
-                if (asyncApi) {
-                    const asyncApiOutput = yield fetchApiList(asyncApi, token, appId);
-                    updateOutputSpecFiles(asyncApiOutput, path, appId, 'asyncApi');
+                if (asyncapiUrls && asyncapiUrls.length) {
+                    const fetchResponse = yield fetchApiSpecsAndSaveSourceFile(asyncapiUrls, token, appId, path, 'asyncapi');
+                    saveApiSpecs(fetchResponse, path, 'asyncapi.json');
                 }
-                if (guides) {
-                    yield Promise.all(guides.map(({ topic, url }) => __awaiter(this, void 0, void 0, function* () {
-                        const githubUrl = getGithubUrl(url);
-                        const data = yield getData(githubUrl, token, 'text/markdown');
-                        const relativePath = `${path}/${appId}/guides`;
-                        if (fs_1.default.existsSync(relativePath) === false) {
-                            fs_1.default.mkdirSync(relativePath, { recursive: true });
-                        }
-                        fs_1.default.writeFileSync(`${relativePath}/${topic}.md`, data);
-                    })));
+                if (guides && guides.length) {
+                    const fetchResponse = yield fetchGuides(guides, token, appId);
+                    saveGuides(fetchResponse, path);
                 }
             }
         }
@@ -82,22 +75,91 @@ function run() {
         }
     });
 }
-function fetchApiList(urlList, token, appId) {
+function saveFile(data, path, filename) {
+    const dirExists = fs_1.default.existsSync(path);
+    if (!dirExists) {
+        fs_1.default.mkdirSync(path, { recursive: true });
+    }
+    fs_1.default.writeFileSync(`${path}/${filename}`, data);
+}
+function fetchApiSpecsAndSaveSourceFile(urls, token, appId, path, filename) {
     return __awaiter(this, void 0, void 0, function* () {
-        const apiOutput = Promise.all(urlList.map((url) => __awaiter(this, void 0, void 0, function* () {
-            const githubUrl = getGithubUrl(url);
-            const data = yield getData(githubUrl, token, 'application/json');
+        return Promise.all(urls.map((url, index) => __awaiter(this, void 0, void 0, function* () {
+            let data = yield (0, utils_1.fetchDataFromGitHub)(url, token, 'application/json');
+            if (url.endsWith('.json')) {
+                data = yaml.dump(data);
+            }
+            // saving the source file as a side effect
+            const srcPath = `${path}/${appId}/src`;
+            const srcFilename = `${filename}-${(index + 1).toString().padStart(2, '0')}.yaml`;
+            console.log('fetchApiSpecsAndSaveSourceFile', appId);
+            saveFile(data, srcPath, srcFilename);
+            // returning the result response object
             return {
-                output: yaml.load(data),
+                data: yaml.load(data),
                 appId,
             };
         })));
-        return apiOutput;
     });
 }
-function getData(url, token, contentType) {
+function saveApiSpecs(fetchResponse, path, filename) {
+    const jsonData = JSON.stringify(fetchResponse, null, 2);
+    const relativePath = `${path}/${fetchResponse[0].appId}`;
+    console.log('saveApiSpecs', relativePath, filename);
+    saveFile(jsonData, relativePath, filename);
+}
+function fetchGuides(guides, token, appId) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { data } = yield axios_1.default.get(url, {
+        return Promise.all(guides.map(({ name, url }) => __awaiter(this, void 0, void 0, function* () {
+            const data = yield (0, utils_1.fetchDataFromGitHub)(url, token, 'text/markdown');
+            return {
+                data,
+                appId,
+                name,
+            };
+        })));
+    });
+}
+function saveGuides(fetchResponse, path) {
+    for (const { appId, data, name } of fetchResponse) {
+        const relativePath = `${path}/${appId}/guides`;
+        console.log('saveGuides', appId, name);
+        saveFile(data, relativePath, `${name}.md`);
+    }
+}
+run();
+
+
+/***/ }),
+
+/***/ 918:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.fetchDataFromGitHub = void 0;
+const axios_1 = __importDefault(__nccwpck_require__(6545));
+function mapGitHubBlobUrlToDownloadUrl(url) {
+    const cleanUrl = url.replace('https://github.com/', '').replace('blob/', '');
+    return `https://raw.githubusercontent.com/${cleanUrl}`;
+}
+function fetchDataFromGitHub(blobUrl, token, contentType) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const downloadUrl = mapGitHubBlobUrlToDownloadUrl(blobUrl);
+        const { data } = yield axios_1.default.get(downloadUrl, {
             headers: {
                 Authorization: `Bearer ${token}`,
                 'Content-Type': contentType,
@@ -107,19 +169,7 @@ function getData(url, token, contentType) {
         return data;
     });
 }
-function updateOutputSpecFiles(openApiOutput, path, appId, filename) {
-    const jsonData = JSON.stringify(openApiOutput, null, 2);
-    const relativePath = `${path}/${appId}`;
-    if (fs_1.default.existsSync(relativePath) === false) {
-        fs_1.default.mkdirSync(relativePath, { recursive: true });
-    }
-    fs_1.default.writeFileSync(`${relativePath}/${filename}.json`, jsonData);
-}
-function getGithubUrl(url) {
-    const cleanUrl = url.replace('https://github.com/', '').replace('blob/', '');
-    return `https://raw.githubusercontent.com/${cleanUrl}`;
-}
-run();
+exports.fetchDataFromGitHub = fetchDataFromGitHub;
 
 
 /***/ }),

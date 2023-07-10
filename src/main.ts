@@ -1,8 +1,8 @@
 import * as core from '@actions/core';
-import axios from 'axios';
 import fs from 'fs';
 import * as yaml from 'js-yaml';
-import { ApiOutput, AppList } from './interfaces';
+import { DeveloperConfig, FetchApiResponse, FetchGuideResponse, GuideConfig } from './interfaces';
+import { fetchDataFromGitHub } from './utils';
 
 async function run(): Promise<void> {
   try {
@@ -10,33 +10,24 @@ async function run(): Promise<void> {
     const filename = core.getInput('filename', { required: true });
     const path = core.getInput('path', { required: false });
 
-    const appList: AppList = JSON.parse(fs.readFileSync(`${path}/${filename}`, 'utf-8'));
+    const developerConfig: DeveloperConfig = JSON.parse(fs.readFileSync(`${path}/${filename}`, 'utf-8'));
 
-    for (const [appId, appItem] of Object.entries(appList)) {
-      const { openApi, asyncApi, guides } = appItem;
+    for (const [appId, configItem] of Object.entries(developerConfig)) {
+      const { openapiUrls, asyncapiUrls, guides } = configItem;
 
-      if (openApi) {
-        const openApiOutput = await fetchApiList(openApi, token, appId);
-        updateOutputSpecFiles(openApiOutput, path, appId, 'openApi');
+      if (openapiUrls && openapiUrls.length) {
+        const fetchResponse = await fetchApiSpecsAndSaveSourceFile(openapiUrls, token, appId, path, 'openapi');
+        saveApiSpecs(fetchResponse, path, 'openapi.json');
       }
 
-      if (asyncApi) {
-        const asyncApiOutput = await fetchApiList(asyncApi, token, appId);
-        updateOutputSpecFiles(asyncApiOutput, path, appId, 'asyncApi');
+      if (asyncapiUrls && asyncapiUrls.length) {
+        const fetchResponse = await fetchApiSpecsAndSaveSourceFile(asyncapiUrls, token, appId, path, 'asyncapi');
+        saveApiSpecs(fetchResponse, path, 'asyncapi.json');
       }
 
-      if (guides) {
-        await Promise.all(
-          guides.map(async ({ topic, url }) => {
-            const githubUrl = getGithubUrl(url);
-            const data = await getData(githubUrl, token, 'text/markdown');
-            const relativePath = `${path}/${appId}/guides`;
-            if (fs.existsSync(relativePath) === false) {
-              fs.mkdirSync(relativePath, { recursive: true });
-            }
-            fs.writeFileSync(`${relativePath}/${topic}.md`, data);
-          })
-        );
+      if (guides && guides.length) {
+        const fetchResponse = await fetchGuides(guides, token, appId);
+        saveGuides(fetchResponse, path);
       }
     }
   } catch (error) {
@@ -45,43 +36,73 @@ async function run(): Promise<void> {
   }
 }
 
-async function fetchApiList(urlList: string[], token: string, appId: string): Promise<ApiOutput[]> {
-  const apiOutput = Promise.all(
-    urlList.map(async url => {
-      const githubUrl = getGithubUrl(url);
-      const data = await getData(githubUrl, token, 'application/json');
+function saveFile(data: string, path: string, filename: string): void {
+  const dirExists = fs.existsSync(path);
+
+  if (!dirExists) {
+    fs.mkdirSync(path, { recursive: true });
+  }
+
+  fs.writeFileSync(`${path}/${filename}`, data);
+}
+
+async function fetchApiSpecsAndSaveSourceFile(
+  urls: string[],
+  token: string,
+  appId: string,
+  path: string,
+  filename: string
+): Promise<FetchApiResponse[]> {
+  return Promise.all(
+    urls.map(async (url, index) => {
+      let data = await fetchDataFromGitHub(url, token, 'application/json');
+
+      if (url.endsWith('.json')) {
+        data = yaml.dump(data);
+      }
+
+      // saving the source file as a side effect
+      const srcPath = `${path}/${appId}/src`;
+      const srcFilename = `${filename}-${(index + 1).toString().padStart(2, '0')}.yaml`;
+      console.log('fetchApiSpecsAndSaveSourceFile', appId);
+      saveFile(data, srcPath, srcFilename);
+
+      // returning the result response object
       return {
-        output: yaml.load(data),
+        data: yaml.load(data),
         appId,
       };
     })
   );
-  return apiOutput;
 }
 
-async function getData(url: string, token: string, contentType: string): Promise<string> {
-  const { data } = await axios.get(url, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': contentType,
-      Accept: '*/*',
-    },
-  });
-  return data;
+function saveApiSpecs(fetchResponse: FetchApiResponse[], path: string, filename: string): void {
+  const jsonData = JSON.stringify(fetchResponse, null, 2);
+  const relativePath = `${path}/${fetchResponse[0].appId}`;
+  console.log('saveApiSpecs', relativePath, filename);
+  saveFile(jsonData, relativePath, filename);
 }
 
-function updateOutputSpecFiles(openApiOutput: ApiOutput[], path: string, appId: string, filename: string): void {
-  const jsonData = JSON.stringify(openApiOutput, null, 2);
-  const relativePath = `${path}/${appId}`;
-  if (fs.existsSync(relativePath) === false) {
-    fs.mkdirSync(relativePath, { recursive: true });
+async function fetchGuides(guides: GuideConfig[], token: string, appId: string): Promise<FetchGuideResponse[]> {
+  return Promise.all(
+    guides.map(async ({ name, url }) => {
+      const data = await fetchDataFromGitHub(url, token, 'text/markdown');
+
+      return {
+        data,
+        appId,
+        name,
+      };
+    })
+  );
+}
+
+function saveGuides(fetchResponse: FetchGuideResponse[], path: string): void {
+  for (const { appId, data, name } of fetchResponse) {
+    const relativePath = `${path}/${appId}/guides`;
+    console.log('saveGuides', appId, name);
+    saveFile(data, relativePath, `${name}.md`);
   }
-  fs.writeFileSync(`${relativePath}/${filename}.json`, jsonData);
-}
-
-function getGithubUrl(url: string): string {
-  const cleanUrl = url.replace('https://github.com/', '').replace('blob/', '');
-  return `https://raw.githubusercontent.com/${cleanUrl}`;
 }
 
 run();
