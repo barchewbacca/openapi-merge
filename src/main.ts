@@ -11,7 +11,6 @@ async function run(): Promise<void> {
     const path = core.getInput('path', { required: false });
 
     const developerConfig: DeveloperConfig = JSON.parse(fs.readFileSync(`${path}/${filename}`, 'utf-8'));
-    core.info(developerConfig.toString());
 
     for (const [appId, configItem] of Object.entries(developerConfig)) {
       const { openapiUrls, asyncapiUrls, guides } = configItem;
@@ -61,7 +60,7 @@ async function fetchApiSpecsAndSaveSourceFile(
       // saving the source file as a side effect
       const srcPath = `${path}/${appId}`;
       const srcFilename = `${filename}-${(index + 1).toString().padStart(2, '0')}.yaml`;
-      console.log('fetchApiSpecsAndSaveSourceFile', appId, data);
+      console.log('fetchApiSpecsAndSaveSourceFile', appId);
       saveFile(data, srcPath, srcFilename);
 
       // returning the result response object
@@ -76,6 +75,7 @@ async function fetchApiSpecsAndSaveSourceFile(
 function saveApiSpecs(fetchResponse: FetchApiResponse[], path: string, filename: string): void {
   const jsonData = JSON.stringify(fetchResponse, null, 2);
   const relativePath = `${path}/${fetchResponse[0].appId}`;
+  console.log('saveApiSpecs', relativePath, filename);
   saveFile(jsonData, relativePath, filename);
 }
 
@@ -96,7 +96,7 @@ async function fetchGuides(guides: GuideConfig[], token: string, appId: string):
 function saveGuides(fetchResponse: FetchGuideResponse[], path: string): void {
   for (const { appId, data, name } of fetchResponse) {
     const relativePath = `${path}/${appId}/guides`;
-    console.log('saveGuides', appId, data, name);
+    console.log('saveGuides', appId, name);
     saveFile(data, relativePath, `${name}.md`);
   }
 }
