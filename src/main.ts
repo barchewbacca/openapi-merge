@@ -61,6 +61,7 @@ async function fetchApiSpecsAndSaveSourceFile(
       // saving the source file as a side effect
       const srcPath = `${path}/${appId}`;
       const srcFilename = `${filename}-${(index + 1).toString().padStart(2, '0')}.yaml`;
+      console.log('fetchApiSpecsAndSaveSourceFile', appId, data);
       saveFile(data, srcPath, srcFilename);
 
       // returning the result response object
@@ -95,6 +96,7 @@ async function fetchGuides(guides: GuideConfig[], token: string, appId: string):
 function saveGuides(fetchResponse: FetchGuideResponse[], path: string): void {
   for (const { appId, data, name } of fetchResponse) {
     const relativePath = `${path}/${appId}/guides`;
+    console.log('saveGuides', appId, data, name);
     saveFile(data, relativePath, `${name}.md`);
   }
 }

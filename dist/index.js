@@ -53,6 +53,7 @@ function run() {
             const filename = core.getInput('filename', { required: true });
             const path = core.getInput('path', { required: false });
             const developerConfig = JSON.parse(fs_1.default.readFileSync(`${path}/${filename}`, 'utf-8'));
+            core.info(developerConfig.toString());
             for (const [appId, configItem] of Object.entries(developerConfig)) {
                 const { openapiUrls, asyncapiUrls, guides } = configItem;
                 if (openapiUrls && openapiUrls.length) {
@@ -89,6 +90,7 @@ function fetchApiSpecsAndSaveSourceFile(urls, token, appId, path, filename) {
             // saving the source file as a side effect
             const srcPath = `${path}/${appId}`;
             const srcFilename = `${filename}-${(index + 1).toString().padStart(2, '0')}.yaml`;
+            console.log('fetchApiSpecsAndSaveSourceFile', appId, data);
             saveFile(data, srcPath, srcFilename);
             // returning the result response object
             return {
@@ -118,6 +120,7 @@ function fetchGuides(guides, token, appId) {
 function saveGuides(fetchResponse, path) {
     for (const { appId, data, name } of fetchResponse) {
         const relativePath = `${path}/${appId}/guides`;
+        console.log('saveGuides', appId, data, name);
         saveFile(data, relativePath, `${name}.md`);
     }
 }
