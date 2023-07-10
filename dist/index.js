@@ -85,7 +85,10 @@ function saveFile(data, path, filename) {
 function fetchApiSpecsAndSaveSourceFile(urls, token, appId, path, filename) {
     return __awaiter(this, void 0, void 0, function* () {
         return Promise.all(urls.map((url, index) => __awaiter(this, void 0, void 0, function* () {
-            const data = yield (0, utils_1.fetchDataFromGitHub)(url, token, 'application/json');
+            let data = yield (0, utils_1.fetchDataFromGitHub)(url, token, 'application/json');
+            if (url.endsWith('.json')) {
+                data = yaml.dump(data);
+            }
             // saving the source file as a side effect
             const srcPath = `${path}/${appId}`;
             const srcFilename = `${filename}-${(index + 1).toString().padStart(2, '0')}.yaml`;

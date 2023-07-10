@@ -55,7 +55,11 @@ async function fetchApiSpecsAndSaveSourceFile(
 ): Promise<FetchApiResponse[]> {
   return Promise.all(
     urls.map(async (url, index) => {
-      const data = await fetchDataFromGitHub(url, token, 'application/json');
+      let data = await fetchDataFromGitHub(url, token, 'application/json');
+
+      if (url.endsWith('.json')) {
+        data = yaml.dump(data);
+      }
 
       // saving the source file as a side effect
       const srcPath = `${path}/${appId}`;
